@@ -1,0 +1,64 @@
+# Music Content Classification Configuration
+
+# Data Configuration
+data:
+  raw_data_path: "data/raw/"
+  processed_data_path: "data/processed/"
+  test_size: 0.2
+  val_size: 0.1
+  random_state: 42
+  
+  # Kaggle Dataset Configuration
+  kaggle:
+    dataset_name: "brianblakely/top-100-songs-and-lyrics-from-1959-to-2019"
+    file_path: ""
+    auto_download: true
+    
+  # Expected column names
+  columns:
+    title: "title"
+    artist: "artist" 
+    year: "year"
+    lyrics: "lyrics"
+    genre: "genre"
+
+# Text Processing
+text_processing:
+  max_sequence_length: 512
+  vocab_size: 10000
+  min_word_freq: 2
+  lowercase: true
+  remove_punctuation: false
+
+# Model Configuration - CNN Only
+model:
+  type: "cnn"
+  filter_sizes: [2, 3, 4, 5]
+  num_filters: 128
+  dropout: 0.5
+  embedding_dim: 300
+  num_classes: 7
+
+# Training Configuration
+training:
+  batch_size: 32
+  learning_rate: 0.001
+  epochs: 50
+  patience: 10
+  weight_decay: 0.01
+
+# Classification Labels
+labels:
+  - "misogyny"
+  - "violence" 
+  - "depression"
+  - "suicide"
+  - "racism"
+  - "homophobia"
+  - "clean"
+
+# Experiment Tracking
+experiment:
+  name: "music_classification_v1"
+  save_model: true
+  save_predictions: true

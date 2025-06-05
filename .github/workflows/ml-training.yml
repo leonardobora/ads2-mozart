@@ -1,0 +1,100 @@
+name: ML Training Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'data/**'
+      - 'src/models/**'
+      - 'config/**'
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      experiment_name:
+        description: 'Name for this training experiment'
+        required: true
+        default: 'manual-training'
+
+jobs:
+  data-validation:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Validate data quality
+      env:
+        KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+        KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      run: |
+        python scripts/download_data.py
+        python scripts/validate_data.py
+    
+    - name: Upload data artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: validated-data
+        path: data/processed/
+        retention-days: 30
+
+  train-model:
+    runs-on: ubuntu-latest
+    needs: data-validation
+    if: contains(github.event.head_commit.message, '[train]') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Download data artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: validated-data
+        path: data/processed/
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Train CNN Model
+      env:
+        WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        EXPERIMENT_NAME: ${{ github.event.inputs.experiment_name || 'auto-training' }}
+      run: |
+        python scripts/train_cnn.py \
+          --config config/config.yml \
+          --experiment-name $EXPERIMENT_NAME \
+          --save-model
+    
+    - name: Evaluate Model
+      run: |
+        python scripts/evaluate_model.py \
+          --model-path models/trained/ \
+          --output results/evaluation/
+    
+    - name: Upload model artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: trained-model-${{ github.sha }}
+        path: |
+          models/trained/
+          results/evaluation/
+        retention-days: 90
+    
+    - name: Create model release
+      if: github.ref == 'refs/heads/main' && success()
+      run: |
+        echo "🎯 Model training completed successfully!" >> $GITHUB_STEP_SUMMARY
+        echo "📊 Check artifacts for evaluation results" >> $GITHUB_STEP_SUMMARY

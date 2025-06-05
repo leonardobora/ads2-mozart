@@ -1,0 +1,85 @@
+# Sensitive Music Data
+data/raw/
+data/labeled/
+data/external/
+*.lyrics
+*.csv
+*.json
+*.parquet
+
+# Model Files
+models/trained/
+models/checkpoints/
+*.h5
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.onnx
+
+# Logs and Results
+logs/
+results/metrics/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# API Keys and Secrets
+.env
+secrets.yml
+credentials.json
+.envrc
+
+# MLflow
+mlruns/
+artifacts/
+
+# Monitoring
+monitoring/data/

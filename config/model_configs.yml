@@ -1,0 +1,61 @@
+# Neural Network Architecture Configurations
+
+rnn_variants:
+  simple_rnn:
+    type: "RNN"
+    hidden_size: 64
+    num_layers: 1
+    dropout: 0.2
+    
+  deep_rnn:
+    type: "RNN" 
+    hidden_size: 128
+    num_layers: 3
+    dropout: 0.4
+
+lstm_variants:
+  bi_lstm:
+    type: "LSTM"
+    hidden_size: 256
+    num_layers: 2
+    bidirectional: true
+    dropout: 0.3
+    
+  stacked_lstm:
+    type: "LSTM"
+    hidden_size: 128
+    num_layers: 4
+    dropout: 0.5
+
+gru_variants:
+  bi_gru:
+    type: "GRU"
+    hidden_size: 256
+    num_layers: 2
+    bidirectional: true
+    dropout: 0.3
+
+cnn_variants:
+  text_cnn:
+    type: "CNN"
+    filter_sizes: [2, 3, 4, 5]
+    num_filters: 128
+    dropout: 0.5
+    
+  deep_cnn:
+    type: "CNN"
+    filter_sizes: [3, 4, 5]
+    num_filters: [100, 150, 200]
+    dropout: 0.4
+
+transformer_variants:
+  distilbert:
+    type: "DistilBERT"
+    model_name: "distilbert-base-uncased"
+    freeze_layers: 6
+    
+  custom_transformer:
+    type: "Transformer"
+    d_model: 512
+    nhead: 8
+    num_layers: 6

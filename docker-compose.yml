@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # Development environment
+  mozart-dev:
+    build:
+      context: .
+      target: development
+    container_name: ads2-mozart-dev
+    ports:
+      - "8888:8888"  # Jupyter
+      - "8000:8000"  # API (when implemented)
+    volumes:
+      - .:/app
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - APP_ENV=development
+      - LOG_LEVEL=debug
+    env_file:
+      - .env
+    networks:
+      - mozart-network
+
+  # Production environment
+  mozart-prod:
+    build:
+      context: .
+      target: production
+    container_name: ads2-mozart-prod
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro  # Read-only models
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+      - APP_ENV=production
+      - LOG_LEVEL=info
+    env_file:
+      - .env
+    networks:
+      - mozart-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import src; print('Health OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MLflow tracking server (optional)
+  mlflow:
+    image: python:3.9-slim
+    container_name: ads2-mozart-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+    command: >
+      bash -c "
+        pip install mlflow &&
+        mlflow server 
+          --backend-store-uri file:///mlruns
+          --default-artifact-root file:///mlruns
+          --host 0.0.0.0
+          --port 5000
+      "
+    networks:
+      - mozart-network
+
+  # Monitoring (optional - basic setup)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ads2-mozart-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - mozart-network
+
+networks:
+  mozart-network:
+    driver: bridge
+
+volumes:
+  mlflow-data:
+  prometheus-data:
