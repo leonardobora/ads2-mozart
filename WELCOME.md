@@ -17,10 +17,10 @@
 1. ✅ **Download e Preparação dos Dados**
    - Executar `python scripts/download_data.py`
    - Validar qualidade dos dados do Kaggle
-   - Criar splits treino/validação/teste
+   - Criar splits treino/validação/testes
 
 2. ✅ **Anotação de Conteúdo Sensível**
-   - Rotular 800+ músicas manualmente
+   - Rotular 40+ músicas manualmente
    - Seguir critérios de classificação rigorosos
    - Garantir consistência na anotação
 

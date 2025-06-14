@@ -14,11 +14,10 @@ from pathlib import Path
 
 try:
     import kagglehub
-    from kagglehub import KaggleDatasetAdapter
     KAGGLE_AVAILABLE = True
 except ImportError:
     KAGGLE_AVAILABLE = False
-    logging.warning("kagglehub not available. Install with: pip install kagglehub[pandas-datasets]")
+    logging.warning("kagglehub not available. Install with: pip install kagglehub")
 
 
 class MusicDataLoader:
@@ -54,17 +53,21 @@ class MusicDataLoader:
             pandas.DataFrame: Loaded dataset
         """
         if not KAGGLE_AVAILABLE:
-            raise ImportError("kagglehub not available. Install with: pip install kagglehub[pandas-datasets]")
+            raise ImportError("kagglehub not available. Install with: pip install kagglehub")
         
         try:
             self.logger.info(f"Loading Kaggle dataset: {dataset_name}")
             
-            # Load the dataset using kagglehub
-            df = kagglehub.load_dataset(
-                KaggleDatasetAdapter.PANDAS,
-                dataset_name,
-                file_path
-            )
+            # Download the dataset using kagglehub
+            path = kagglehub.dataset_download(dataset_name)
+            
+            # Find CSV files in the downloaded path
+            csv_files = list(Path(path).glob("*.csv"))
+            if not csv_files:
+                raise FileNotFoundError(f"No CSV files found in downloaded dataset: {path}")
+            
+            # Load the first CSV file found
+            df = pd.read_csv(csv_files[0])
             
             self.logger.info(f"Dataset loaded successfully. Shape: {df.shape}")
             self.logger.info(f"Columns: {list(df.columns)}")

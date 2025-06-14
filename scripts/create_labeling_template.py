@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Script para Criar Template de Rotulação
 
@@ -61,13 +62,22 @@ def create_labeling_template(input_path: str, sample_size: int, output_dir: str)
         # Amostragem aleatória simples
         sampled_df = df.sample(min(sample_size, len(df)))
     
+    # Mapeia nomes de colunas para nomes padronizados
+    column_mapping = {
+        'Song Title': 'title',
+        'Artist': 'artist', 
+        'Year': 'year',
+        'Lyrics': 'lyrics'
+    }
+    
+    # Renomeia as colunas
+    sampled_df = sampled_df.rename(columns=column_mapping)
+    
     # Cria template de rotulação
     labeling_df = sampled_df[['title', 'artist', 'year', 'lyrics']].copy()
     
-    # Adiciona colunas de rótulos (0/1 para cada categoria)
-    labels = ['misogyny', 'violence', 'depression', 'suicide', 'racism', 'homophobia']
-    for label in labels:
-        labeling_df[label] = None  # Para preenchimento manual
+    # Adiciona coluna de rótulo para misoginia (0-1 continuous scale)
+    labeling_df['misogyny_score'] = None  # Para preenchimento manual (0.0 - 1.0)
     
     # Adiciona colunas auxiliares
     labeling_df['annotator_id'] = None
@@ -76,7 +86,7 @@ def create_labeling_template(input_path: str, sample_size: int, output_dir: str)
     labeling_df['lyrics_preview'] = labeling_df['lyrics'].str[:200] + "..."
     
     # Reorganiza colunas
-    cols = ['title', 'artist', 'year', 'lyrics_preview'] + labels + ['annotator_id', 'confidence', 'notes', 'lyrics']
+    cols = ['title', 'artist', 'year', 'lyrics_preview', 'misogyny_score', 'annotator_id', 'confidence', 'notes', 'lyrics']
     labeling_df = labeling_df[cols]
     
     # Salva template
@@ -89,63 +99,65 @@ def create_labeling_template(input_path: str, sample_size: int, output_dir: str)
     # Cria arquivo de instruções
     instructions_file = output_path / "INSTRUCTIONS_PT.md"
     with open(instructions_file, 'w', encoding='utf-8') as f:
-        f.write("""# 📝 Instruções para Rotulação de Conteúdo Sensível
+        f.write("""# 📝 Instruções para Rotulação de Misoginia em Letras Musicais
 
 ## Objetivo
-Identificar conteúdo sensível nas letras musicais para treinar modelo CNN.
+Identificar e classificar conteúdo misógino nas letras musicais para treinar modelo CNN.
+**FOCO EXCLUSIVO**: Misoginia (conteúdo que degrada, objetifica ou promove violência contra mulheres)
+
+## Escala de Classificação
+
+### **misogyny_score**: Valor contínuo entre 0.0 e 1.0
+
+#### **0.0 - Baixo/Ausente**
+- Nenhum conteúdo misógino detectável
+- Menções neutras ou positivas de mulheres
+- Exemplo: "She's amazing", "My mother taught me"
+
+#### **0.3 - Médio** 
+- Insinuações sutis de inferioridade feminina
+- Estereótipos de gênero problemáticos
+- Exemplo: "Women belong in the kitchen", "Girls are too emotional"
+
+#### **0.7 - Médio Alto**
+- Objetificação sexual explícita
+- Linguagem degradante sobre mulheres
+- Exemplo: "She's just a toy", "Women are for pleasure"
+
+#### **1.0 - Alto**
+- Promoção direta de violência contra mulheres
+- Conteúdo extremamente degradante
+- Linguagem violenta e misógina explícita
+- Exemplo: Threats of violence, extreme sexual degradation
 
 ## Como Rotular
 
-### 1. Para cada música, marque 1 (presente) ou 0 (ausente) para:
+### 1. Leia a letra completa cuidadosamente
+### 2. Atribua um score de 0.0 a 1.0 na coluna **misogyny_score**
+### 3. Preencha campos obrigatórios:
+- **annotator_id**: Suas iniciais
+- **confidence**: 1-5 (1=muito incerto, 5=muito certo)
+- **notes**: Justificativa da pontuação (opcional mas recomendado)
 
-**misogyny**: Conteúdo que degrada, objetifica ou promove violência contra mulheres
-- Exemplos: "women are objects", "she's just a toy", linguagem sexualmente degradante
-
-**violence**: Descrições de violência física, armas, agressões
-- Exemplos: referencias a armas, brigas, assassinatos, violência urbana
-
-**depression**: Conteúdo relacionado à depressão, tristeza profunda, desesperança
-- Exemplos: "I want to disappear", "nothing matters anymore", sentimentos de vazio
-
-**suicide**: Referencias diretas ou indiretas ao suicídio
-- Exemplos: "end it all", "better off dead", métodos de autolesão
-
-**racism**: Conteúdo racista, preconceituoso ou discriminatório
-- Exemplos: slurs raciais, estereótipos negativos, supremacismo
-
-**homophobia**: Conteúdo homofóbico ou discriminatório contra LGBTQ+
-- Exemplos: slurs homofóbicos, discriminação por orientação sexual
-
-### 2. Preencha campos adicionais:
-- **annotator_id**: Seu nome/iniciais
-- **confidence**: 1-5 (1=incerto, 5=muito certo)
-- **notes**: Observações especiais
-
-### 3. Critérios Importantes:
-- ❌ NÃO rotule baseado no gênero musical
-- ❌ NÃO rotule palavrões simples (a menos que sejam ofensivos)
+## Critérios Importantes:
 - ✅ Considere o contexto completo da música
-- ✅ Seja consistente nos critérios
-- ✅ Quando em dúvida, marque confidence baixa
+- ✅ Foque apenas em conteúdo contra mulheres/feminino
+- ✅ Seja consistente na escala
+- ✅ Use valores intermediários (0.1, 0.2, 0.4, 0.6, 0.8, 0.9)
+- ❌ NÃO considere palavrões gerais que não sejam misóginos
+- ❌ NÃO rotule baseado no gênero musical ou época
 
-## Exemplos
+## Exemplos de Pontuação:
 
-### Música COM conteúdo sensível:
-**Título**: "Exemplo Song"
-- violence: 1 (menciona "gun" e "kill")
-- misogyny: 1 (chama mulheres de "objects")
-- depression: 0
-- suicide: 0
-- racism: 0
-- homophobia: 0
-
-### Música SEM conteúdo sensível:
-**Título**: "Love Song"
-- Todos os campos: 0 (música romântica sem conteúdo problemático)
+**Score 0.0**: "She's the love of my life, so beautiful and smart"
+**Score 0.3**: "Women always complain about everything"  
+**Score 0.7**: "She's nothing but a piece of meat to me"
+**Score 1.0**: [Conteúdo extremamente violento - censurado]
 
 ## ⚠️ Importante
-Este trabalho é para fins acadêmicos de pesquisa sobre conteúdo musical.
-Consulte supervisor se encontrar conteúdo extremamente perturbador.
+- Este trabalho é para fins acadêmicos de classificação de conteúdo
+- Consulte supervisor se encontrar conteúdo extremamente perturbador
+- Mantenha objetividade e consistência nas avaliações
 """)
 
     print(f"✅ Template criado: {template_file}")
